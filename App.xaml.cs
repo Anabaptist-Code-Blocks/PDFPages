@@ -17,6 +17,7 @@ namespace PDFPages
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
             string[] args = Environment.GetCommandLineArgs();
             //first arg is executable path
             if (args.Length > 1)

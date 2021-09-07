@@ -1,22 +1,20 @@
-﻿using GongSolutions.Wpf.DragDrop.Utilities;
-using PdfSharp.Drawing;
+﻿using GongSolutions.Wpf.DragDrop;
 using PdfSharp.Pdf;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace PDFPages.ViewModels
 {
-    public class MainVM : ViewModelBase
+    public class MainVM : ViewModelBase, IDropTarget, IDragSource
     {
         public MainVM()
         {
@@ -26,6 +24,9 @@ namespace PDFPages.ViewModels
 
         #region Fields
         private bool fileSortDesc = false;
+        private bool outputFileSortDesc = false;
+        DefaultDropHandler dropHandler = new DefaultDropHandler();
+        DefaultDragHandler dragHandler = new DefaultDragHandler();
         #endregion
 
         #region Properties
@@ -36,6 +37,10 @@ namespace PDFPages.ViewModels
         public PDFFile SelectedOutputFile { get; set; }
         public string OutputPath { get; set; } = "";
         public int RowHeight { get; set; } = 150;
+        public double PreviewWidth { get; set; } = 500;
+        public double PreviewHeight { get; set; } = 800;
+        public ImageSource PreviewImage { get; set; }
+        public bool PreviewOpen { get; set; } = false;
 
         #endregion
 
@@ -72,11 +77,79 @@ namespace PDFPages.ViewModels
                 return _SaveCommand ?? (_SaveCommand = new CommandHandler(e => { SaveOutputFiles(); }, true));
             }
         }
-
+        private ICommand _PreviewCommand;
+        public ICommand PreviewCommand
+        {
+            get
+            {
+                return _PreviewCommand ?? (_PreviewCommand = new CommandHandler(e => { ShowPreview(e as PageInfo); }, true));
+            }
+        }
+        private ICommand _AddFileCommand;
+        public ICommand AddFileCommand
+        {
+            get
+            {
+                return _AddFileCommand ?? (_AddFileCommand = new CommandHandler(e => { AddFile(); }, true));
+            }
+        }
+        private ICommand _DeleteItemsCommand;
+        public ICommand DeleteItemsCommand
+        {
+            get
+            {
+                return _DeleteItemsCommand ?? (_DeleteItemsCommand = new CommandHandler(e => { DeleteItems(e); }, true));
+            }
+        }
 
         #endregion
 
         #region Methods
+
+        private void AddFile()
+        {
+            var dialog = new Ookii.Dialogs.Wpf.VistaOpenFileDialog();
+            dialog.DefaultExt = "*.pdf";
+            dialog.Filter = "pdf files(*.pdf)|*.pdf|All files(*.*)|*.*";
+            dialog.Multiselect = true;
+            if (dialog.ShowDialog(App.Current.MainWindow).GetValueOrDefault())
+            {
+                foreach (var path in dialog.FileNames)
+                {
+                    try
+                    {
+                        Files.Add(new PDFFile(path));
+                    }
+                    catch
+                    {
+                        //Don't stress about invalid files.
+                    }
+                }
+            }
+        }
+
+        private void DeleteItems(object e)
+        {
+            var dataGrid = e as DataGrid;
+            if (dataGrid?.SelectedItems?.Count > 0)
+            {
+                switch (GetGridType(dataGrid.ItemsSource))
+                {
+                    case GridType.InputFiles:
+                        foreach (var item in dataGrid.SelectedItems.Cast<PDFFile>().ToList()) Files.Remove(item as PDFFile);
+                        break;
+                    case GridType.InputPages:
+                        foreach (var item in dataGrid.SelectedItems.Cast<PageInfo>().ToList()) SelectedFile?.Pages?.Remove(item as PageInfo);
+                        break;
+                    case GridType.OutputFiles:
+                        foreach (var item in dataGrid.SelectedItems.Cast<PDFFile>().ToList()) OutputFiles.Remove(item as PDFFile);
+                        break;
+                    case GridType.OutputPages:
+                        foreach (var item in dataGrid.SelectedItems.Cast<PageInfo>().ToList()) SelectedOutputFile?.Pages?.Remove(item as PageInfo);
+                        break;
+                }
+            }
+        }
 
         private void LoadFiles()
         {
@@ -98,6 +171,13 @@ namespace PDFPages.ViewModels
             fileSortDesc = !fileSortDesc;
             List<PDFFile> list = (fileSortDesc ? Files.OrderBy(f => f.FileName) : Files.OrderByDescending(f => f.FileName)).ToList();
             Files = new ObservableCollection<PDFFile>(list);
+        }
+
+        public void SortOutputFiles()
+        {
+            outputFileSortDesc = !outputFileSortDesc;
+            List<PDFFile> list = (outputFileSortDesc ? OutputFiles.OrderBy(f => f.FileName) : OutputFiles.OrderByDescending(f => f.FileName)).ToList();
+            OutputFiles = new ObservableCollection<PDFFile>(list);
         }
 
         private void SplitPages()
@@ -166,6 +246,389 @@ namespace PDFPages.ViewModels
             }
         }
 
+        private void ShowPreview(PageInfo page)
+        {
+            if (page != null)
+            {
+                PreviewHeight = page.Page.Height.Point;
+                PreviewWidth = page.Page.Width.Point;
+                PreviewImage = page.PageImage;
+                PreviewOpen = true;
+            }
+        }
+
         #endregion
+
+        #region Drag & Drop
+
+        enum GridType
+        {
+            InputFiles,
+            InputPages,
+            OutputFiles,
+            OutputPages,
+            None
+        }
+
+        private GridType GetGridType(IEnumerable collection)
+        {
+            if (collection == Files) return GridType.InputFiles;
+            if (collection == SelectedFile?.Pages) return GridType.InputPages;
+            if (collection == OutputFiles) return GridType.OutputFiles;
+            if (collection == SelectedOutputFile?.Pages) return GridType.OutputPages;
+            return GridType.None;
+        }
+
+        public void DragOver(IDropInfo dropInfo)
+        {
+            //throw new NotImplementedException();
+            dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
+            dropInfo.Effects = DragDropEffects.Move;
+            GridType DragGrid = GetGridType(dropInfo?.DragInfo?.SourceCollection);
+            GridType DropGrid = GetGridType(dropInfo?.TargetCollection);
+
+            switch (DropGrid)
+            {
+                case GridType.InputFiles:
+                    if (DragGrid != GridType.InputFiles)
+                    {
+                        var data = dropInfo.Data as IDataObject;
+                        if (data != null && (data.GetDataPresent("FileContents") || data.GetDataPresent(DataFormats.FileDrop)))
+                        {
+                            dropInfo.Effects = DragDropEffects.Copy;
+                            dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
+                        }
+                        else dropInfo.Effects = DragDropEffects.None;
+                    }
+                    return;
+                case GridType.InputPages:
+                    if (DragGrid != GridType.InputPages)
+                    {
+                        dropInfo.DropTargetAdorner = null;
+                        dropInfo.Effects = DragDropEffects.None;
+                    }
+                    return;
+                case GridType.OutputFiles:
+                    if (DragGrid != GridType.OutputFiles)
+                    {
+                        dropInfo.Effects = DragDropEffects.Copy;
+                    }
+                    if ((int)dropInfo.InsertPosition >= 4)
+                    {
+                        dropInfo.DropTargetAdorner = DropTargetAdorners.Highlight;
+                    }
+                    return;
+            }
+        }
+
+        public void Drop(IDropInfo dropInfo)
+        {
+            try
+            {
+                GridType DragGrid = GetGridType(dropInfo?.DragInfo?.SourceCollection);
+                GridType DropGrid = GetGridType(dropInfo?.TargetCollection);
+                switch (DropGrid)
+                {
+                    case GridType.InputFiles:
+                        var data = dropInfo.Data as IDataObject;
+                        if (data != null && (data.GetDataPresent("FileContents") || data.GetDataPresent(DataFormats.FileDrop)))
+                        {
+                            var files = ExtractFiles(data);
+                            for (int i = files.Count - 1; i >= 0; i--)
+                            {
+                                Files.Insert(dropInfo.InsertIndex, files[i]);
+                            }
+                            return;
+                        }
+                        break;
+                    case GridType.OutputFiles:
+                        if (DragGrid != DropGrid)
+                        {
+                            PDFFile file = null;
+                            if (dropInfo.DropTargetAdorner == DropTargetAdorners.Highlight)
+                            {
+                                file = dropInfo.TargetItem as PDFFile;
+                            }
+                            else
+                            {
+                                file = new PDFFile("new file.pdf", new List<PageInfo>());
+                                OutputFiles.Insert(dropInfo.UnfilteredInsertIndex, file);
+                            }
+                            switch (DragGrid)
+                            {
+                                case GridType.InputFiles:
+                                    if (dropInfo.Data.GetType() == typeof(PDFFile))
+                                    {
+                                        foreach (var page in (dropInfo.Data as PDFFile).Pages)
+                                        {
+                                            file.Pages.Add(page);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var inputFiles = (dropInfo.Data as ICollection)?.Cast<PDFFile>()?.ToList();
+                                        if (inputFiles != null)
+                                        {
+                                            foreach (var inputFile in inputFiles)
+                                            {
+                                                foreach (PageInfo page in inputFile.Pages)
+                                                {
+                                                    file.Pages.Add(page);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    return;
+                                case GridType.InputPages:
+                                case GridType.OutputPages:
+                                    var movedPages = new List<PageInfo>();
+                                    if (dropInfo.Data.GetType() == typeof(PageInfo))
+                                    {
+                                        file.Pages.Add(dropInfo.Data as PageInfo);
+                                        movedPages.Add(dropInfo.Data as PageInfo);
+                                    }
+                                    else
+                                    {
+                                        var pages = (dropInfo.Data as ICollection)?.Cast<PageInfo>()?.ToList();
+                                        if (pages != null)
+                                        {
+                                            foreach (PageInfo page in pages)
+                                            {
+                                                file.Pages.Add(page);
+                                                movedPages.Add(page);
+                                            }
+                                        }
+                                    }
+                                    if (DragGrid == GridType.OutputPages && SelectedOutputFile != null)
+                                    {
+                                        foreach (var page in movedPages)
+                                        {
+                                            SelectedOutputFile.Pages.Remove(page);
+                                        }
+                                    }
+                                    return;
+                            }
+                        }
+                        else
+                        {
+                            //handle dropping file(s) from outputfiles onto another file. This adds the dropped files to the target.
+                            if (dropInfo.DropTargetAdorner == DropTargetAdorners.Highlight)
+                            {
+                                var file = dropInfo.TargetItem as PDFFile;
+                                if (dropInfo.Data.GetType() == typeof(PDFFile))
+                                {
+                                    foreach (var page in (dropInfo.Data as PDFFile).Pages)
+                                    {
+                                        file.Pages.Add(page);
+                                    }
+                                    OutputFiles.Remove(dropInfo.Data as PDFFile);
+                                }
+                                else
+                                {
+                                    var inputFiles = (dropInfo.Data as ICollection)?.Cast<PDFFile>()?.ToList();
+                                    if (inputFiles != null)
+                                    {
+                                        foreach (var inputFile in inputFiles)
+                                        {
+                                            foreach (PageInfo page in inputFile.Pages)
+                                            {
+                                                file.Pages.Add(page);
+                                            }
+                                            OutputFiles.Remove(inputFile);
+                                        }
+                                    }
+                                }
+                                return;
+                            }
+
+                        }
+                        break;
+                    case GridType.OutputPages:
+                        if (DragGrid != DropGrid)
+                        {
+                            var file = SelectedOutputFile;
+                            if (file == null) return;
+                            switch (DragGrid)
+                            {
+                                case GridType.InputFiles:
+                                    if (dropInfo.Data.GetType() == typeof(PDFFile))
+                                    {
+                                        var pages = (dropInfo.Data as PDFFile).Pages;
+                                        for (int i = pages.Count - 1; i >= 0; i--)
+                                        {
+                                            file.Pages.Insert(dropInfo.InsertIndex, pages[i]);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var inputFiles = (dropInfo.Data as ICollection)?.Cast<PDFFile>()?.ToList();
+                                        if (inputFiles != null)
+                                        {
+                                            var pages = new List<PageInfo>();
+                                            foreach (var inputFile in inputFiles)
+                                            {
+                                                foreach (PageInfo page in inputFile.Pages)
+                                                {
+                                                    pages.Add(page);
+                                                }
+                                            }
+                                            for (int i = pages.Count - 1; i >= 0; i--)
+                                            {
+                                                file.Pages.Insert(dropInfo.InsertIndex, pages[i]);
+                                            }
+                                        }
+                                    }
+                                    return;
+                                case GridType.InputPages:
+                                    if (dropInfo.Data.GetType() == typeof(PageInfo))
+                                    {
+                                        file.Pages.Insert(dropInfo.InsertIndex, dropInfo.Data as PageInfo);
+                                    }
+                                    else
+                                    {
+                                        var pages = (dropInfo.Data as ICollection)?.Cast<PageInfo>()?.ToList();
+                                        if (pages != null)
+                                        {
+                                            for (int i = pages.Count - 1; i >= 0; i--)
+                                            {
+                                                file.Pages.Insert(dropInfo.InsertIndex, pages[i]);
+                                            }
+                                        }
+                                    }
+                                    return;
+                                case GridType.OutputFiles:
+                                    return;
+                            }
+                        }
+
+                        break;
+                }
+
+                dropHandler.Drop(dropInfo);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                //So there was an error dropping the object. Don't stress about it.
+            }
+        }
+
+        public void StartDrag(IDragInfo dragInfo)
+        {
+            dragHandler.StartDrag(dragInfo);
+        }
+
+        public bool CanStartDrag(IDragInfo dragInfo)
+        {
+            return dragHandler.CanStartDrag(dragInfo);
+        }
+
+        public void Dropped(IDropInfo dropInfo)
+        {
+        }
+
+        public void DragDropOperationFinished(DragDropEffects operationResult, IDragInfo dragInfo)
+        {
+            dragHandler.DragDropOperationFinished(operationResult, dragInfo);
+        }
+
+        public void DragCancelled()
+        {
+            dragHandler.DragCancelled();
+        }
+
+        public bool TryCatchOccurredException(Exception exception)
+        {
+            return dragHandler.TryCatchOccurredException(exception);
+        }
+
+        public List<PDFFile> ExtractFiles(IDataObject data)
+        {
+            var files = new List<PDFFile>();
+            try
+            {
+                if (data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    string[] filesNames = data.GetData(DataFormats.FileDrop) as string[];
+                    if (filesNames != null && filesNames.Length > 0)
+                    {
+                        foreach (var filePath in filesNames)
+                        {
+                            try
+                            {
+                                var file = new PDFFile(filePath);
+                                files.Add(file);
+                            }
+                            catch
+                            {
+                                //in case the file is not a valid pdf it simply isn't added.
+                            }
+                        }
+                    }
+                }
+                else if (data.GetDataPresent("FileContents"))
+                {
+                    //handle file dropped from outlook
+                    //get the file names
+                    List<string> fileNames = new List<string>();
+                    using (var stream = data.GetData("FileGroupDescriptor") as MemoryStream)
+                    {
+                        var fileGroupDescriptor = new byte[stream.Length];
+                        stream.Read(fileGroupDescriptor, 0, (int)stream.Length);
+                        int numFiles = fileGroupDescriptor[0];
+                        // used to build the filename from the FileGroupDescriptor block
+                        // this trick gets the filename of the passed attached file
+                        var pos = 0;
+                        for (int fileNum = 0; fileNum < numFiles; fileNum++)
+                        {
+                            var fn = new StringBuilder("");
+                            var startPos = (fileNum * 332) + 76;
+                            for (int i = startPos; fileGroupDescriptor[i] != 0; i++)
+                            {
+                                fn.Append(Convert.ToChar(fileGroupDescriptor[i]));
+                                pos = i;
+                            }
+                            fileNames.Add(fn.ToString());
+                        }
+                        stream.Close();
+                    }
+                    //get multiple files contents
+                    var comDataObject = (System.Runtime.InteropServices.ComTypes.IDataObject)data;
+                    OutlookDataObject dataObject = new OutlookDataObject(new System.Windows.Forms.DataObject(data));
+                    MemoryStream[] fileStreams = (MemoryStream[])dataObject.GetData("FileContents");
+                    for (int i = 0; i < fileStreams.Length; i++)
+                    {
+                        using (var ms = fileStreams[i])
+                        {
+                            //var contents = new byte[ms.Length];
+                            //ms.Read(contents, 0, (int)ms.Length);
+                            //ms.Close();
+                            try
+                            {
+                                var doc = PdfSharp.Pdf.IO.PdfReader.Open(ms, PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
+                                var pages = new List<PageInfo>(0);
+                                foreach (var page in doc.Pages) pages.Add(new PageInfo(page));
+                                var file = new PDFFile(fileNames[i], pages, ms);
+                                files.Add(file);
+                                ms.Close();
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e.Message);
+                                //in case the file is not a valid pdf it simply isn't added.
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return files;
+        }
+
+        #endregion
+
     }
 }

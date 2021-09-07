@@ -1,7 +1,6 @@
 ﻿using PDFPages.ViewModels;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,10 +25,14 @@ namespace PDFPages
         {
             InitializeComponent();
         }
-
         private void dgFiles_Sorting(object sender, DataGridSortingEventArgs e)
         {
             (DataContext as MainVM)?.SortFiles();
+            e.Handled = true;
+        }
+        private void dgOutputFiles_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            (DataContext as MainVM)?.SortOutputFiles();
             e.Handled = true;
         }
     }

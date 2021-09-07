@@ -1,10 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.ComponentModel;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System;
+using System.Collections;
 
-namespace System.Collections.ObjectModel
+namespace PDFPages
 {
     public class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INotifyCollectionChanged, INotifyPropertyChanged
     {

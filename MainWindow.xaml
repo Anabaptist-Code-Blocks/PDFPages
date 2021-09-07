@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:local="clr-namespace:PDFPages"
-        xmlns:dd="urn:gong-wpf-dragdrop" xmlns:vm="clr-namespace:PDFPages.ViewModels" mc:Ignorable="d" Title="PDF Pages"
-        Height="850" Width="800">
+        xmlns:dd="urn:gong-wpf-dragdrop" xmlns:vm="clr-namespace:PDFPages.ViewModels" mc:Ignorable="d"
+        Title="PDF Pages" Height="850" Width="800">
     <Window.DataContext>
         <vm:MainVM />
     </Window.DataContext>
@@ -31,8 +31,14 @@
             </Grid.ColumnDefinitions>
             <DataGrid ItemsSource="{Binding Files}" Style="{StaticResource DefaultDataGridStyle}" AlternationCount="3"
                     dd:DragDrop.UseDefaultDragAdorner="True" dd:DragDrop.DropTargetAdornerBrush="Blue"
-                    Sorting="dgFiles_Sorting" SelectedItem="{Binding SelectedFile}" dd:DragDrop.IsDragSource="True"
-                    dd:DragDrop.IsDropTarget="True" Grid.ColumnSpan="1" Margin="0,0,0,0">
+                    SelectionMode="Extended" Sorting="dgFiles_Sorting" SelectedItem="{Binding SelectedFile}"
+                    dd:DragDrop.DragHandler="{Binding}" dd:DragDrop.DropHandler="{Binding}"
+                    dd:DragDrop.DragDropContext="Files" dd:DragDrop.IsDragSource="True" dd:DragDrop.IsDropTarget="True"
+                    Grid.ColumnSpan="1" Margin="0,0,0,0">
+                <DataGrid.InputBindings>
+                    <KeyBinding Key="Delete" Command="{Binding DeleteItemsCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}" />
+                </DataGrid.InputBindings>
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Header="Input Files" Width="*" SortMemberPath="FileName">
                         <DataGridTemplateColumn.CellTemplate>
@@ -53,9 +59,14 @@
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Left" Background="Transparent" />
             <DataGrid ItemsSource="{Binding SelectedFile.Pages}" Style="{StaticResource DefaultDataGridStyle}"
                     Margin="5,0,0,0" AlternationCount="3" dd:DragDrop.UseDefaultDragAdorner="True"
-                    dd:DragDrop.DropTargetAdornerBrush="Blue" RowHeight="{Binding RowHeight}"
-                    VirtualizingPanel.ScrollUnit="Pixel" dd:DragDrop.IsDragSource="True" dd:DragDrop.IsDropTarget="True"
-                    Grid.ColumnSpan="1" Grid.Column="1">
+                    ScrollViewer.PanningMode="None" dd:DragDrop.DropTargetAdornerBrush="Blue"
+                    RowHeight="{Binding RowHeight}" SelectionMode="Extended" VirtualizingPanel.ScrollUnit="Pixel"
+                    dd:DragDrop.DragHandler="{Binding}" dd:DragDrop.DropHandler="{Binding}"
+                    dd:DragDrop.IsDragSource="True" dd:DragDrop.IsDropTarget="True" Grid.ColumnSpan="1" Grid.Column="1">
+                <DataGrid.InputBindings>
+                    <KeyBinding Key="Delete" Command="{Binding DeleteItemsCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}" />
+                </DataGrid.InputBindings>
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Setter Property="BorderBrush" Value="Gray" />
@@ -66,7 +77,13 @@
                     <DataGridTemplateColumn Header="Pages" Width="*">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Image Source="{Binding PageImage}" />
+                                <Image Source="{Binding PageImage}">
+                                    <Image.InputBindings>
+                                        <MouseBinding Gesture="RightClick"
+                                                Command="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor},  Path=DataContext.PreviewCommand}"
+                                                CommandParameter="{Binding}" />
+                                    </Image.InputBindings>
+                                </Image>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -75,11 +92,16 @@
             <GridSplitter Grid.Column="2" Width="5" HorizontalAlignment="Left" Background="Transparent" />
             <DataGrid ItemsSource="{Binding OutputFiles}" Style="{StaticResource DefaultDataGridStyle}"
                     AlternationCount="3" dd:DragDrop.UseDefaultDragAdorner="True"
-                    dd:DragDrop.DropTargetAdornerBrush="Blue" Sorting="dgFiles_Sorting"
+                    dd:DragDrop.DropTargetAdornerBrush="Blue" Sorting="dgOutputFiles_Sorting" SelectionMode="Extended"
                     SelectedItem="{Binding SelectedOutputFile}" dd:DragDrop.IsDragSource="True" IsReadOnly="False"
+                    dd:DragDrop.DragHandler="{Binding}" dd:DragDrop.DropHandler="{Binding}"
                     dd:DragDrop.IsDropTarget="True" Grid.ColumnSpan="1" Margin="5,0,0,0" Grid.Column="2">
+                <DataGrid.InputBindings>
+                    <KeyBinding Key="Delete" Command="{Binding DeleteItemsCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}" />
+                </DataGrid.InputBindings>
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="Input Files" Width="*" SortMemberPath="FileName" IsReadOnly="False">
+                    <DataGridTemplateColumn Header="Output Files" Width="*" SortMemberPath="FileName" IsReadOnly="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Grid ToolTip="{Binding FullPath}">
@@ -103,9 +125,14 @@
             <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Left" Background="Transparent" />
             <DataGrid ItemsSource="{Binding SelectedOutputFile.Pages}" Style="{StaticResource DefaultDataGridStyle}"
                     Margin="5,0,0,0" AlternationCount="3" dd:DragDrop.UseDefaultDragAdorner="True"
-                    dd:DragDrop.DropTargetAdornerBrush="Blue" RowHeight="{Binding RowHeight}"
+                    dd:DragDrop.DragHandler="{Binding}" dd:DragDrop.DropHandler="{Binding}"
+                    dd:DragDrop.DropTargetAdornerBrush="Blue" RowHeight="{Binding RowHeight}" SelectionMode="Extended"
                     VirtualizingPanel.ScrollUnit="Pixel" dd:DragDrop.IsDragSource="True" dd:DragDrop.IsDropTarget="True"
                     Grid.ColumnSpan="1" Grid.Column="3">
+                <DataGrid.InputBindings>
+                    <KeyBinding Key="Delete" Command="{Binding DeleteItemsCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}" />
+                </DataGrid.InputBindings>
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Setter Property="BorderBrush" Value="Gray" />
@@ -116,12 +143,28 @@
                     <DataGridTemplateColumn Header="Pages" Width="*">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Image Source="{Binding PageImage}" />
+                                <Image Source="{Binding PageImage}">
+                                    <Image.InputBindings>
+                                        <MouseBinding Gesture="RightClick"
+                                                Command="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor},  Path=DataContext.PreviewCommand}"
+                                                CommandParameter="{Binding}" />
+                                    </Image.InputBindings>
+                                </Image>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
+            <Button Content="+" HorizontalAlignment="Right" Margin="0,0,0,0" VerticalAlignment="Top" Width="21"
+                    Height="21" Command="{Binding AddFileCommand}" ToolTip="Add Files" />
         </Grid>
+        <Popup IsOpen="{Binding PreviewOpen}" StaysOpen="False" Placement="MousePoint" AllowsTransparency="True">
+            <Border x:Name="popupBorder" CornerRadius="10" BorderBrush="DimGray" BorderThickness="1"
+                    Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}">
+                <Border.Background>
+                    <ImageBrush Stretch="Fill" ImageSource="{Binding PreviewImage}" />
+                </Border.Background>
+            </Border>
+        </Popup>
     </Grid>
 </Window>

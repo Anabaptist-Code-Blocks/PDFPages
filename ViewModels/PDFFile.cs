@@ -1,4 +1,5 @@
-﻿using PdfSharp.Pdf;
+﻿using GongSolutions.Wpf.DragDrop;
+using PdfSharp.Pdf;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -18,6 +20,12 @@ namespace PDFPages.ViewModels
         {
             FileName = fileName;
             Pages = new ObservableCollection<PageInfo>(pages);
+        }
+        public PDFFile(string fileName, List<PageInfo> pages, MemoryStream stream)
+        {
+            FileName = fileName;
+            Pages = new ObservableCollection<PageInfo>(pages);
+            GetImages(stream);
         }
         public PDFFile(string path)
         {
@@ -68,6 +76,35 @@ namespace PDFPages.ViewModels
             }
             Console.WriteLine("Got Images: " + FileName);
             return true;
+        }
+        private void GetImages(MemoryStream stream)
+        {
+            var pdfDocument = PdfiumViewer.PdfDocument.Load(stream);
+            for (int i = 0; i < Pages.Count; i++)
+            {
+                var page = Pages[i].Page;
+                var height = Convert.ToInt32(page.Height.Point);
+                int yDpi = Convert.ToInt32(page.Height.Point / page.Height.Inch);
+                int width = Convert.ToInt32(page.Width.Point);
+                var xDpi = Convert.ToInt32(page.Width.Point / page.Width.Inch);
+                var image = pdfDocument.Render(i, (int)width, (int)height, xDpi, yDpi, PdfiumViewer.PdfRenderFlags.Annotations);
+                using (var ms = new MemoryStream())
+                {
+                    image.Save(ms, ImageFormat.Bmp);
+                    ms.Seek(0, SeekOrigin.Begin);
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        var bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.StreamSource = ms;
+                        bitmapImage.EndInit();
+                        Pages[i].PageImage = bitmapImage;
+                    });
+                }
+            }
+            Console.WriteLine("Got Images: " + FileName);
+            return;
         }
 
         public string FullPath { get; set; }
