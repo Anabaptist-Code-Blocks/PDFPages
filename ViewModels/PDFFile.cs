@@ -113,7 +113,7 @@ namespace PDFPages.ViewModels
         public PdfDocument Document { get; set; }
     }
 
-    public class PageInfo
+    public class PageInfo : ViewModelBase
     {
         public PageInfo(PdfPage page)
         {
@@ -121,5 +121,6 @@ namespace PDFPages.ViewModels
         }
         public PdfPage Page { get; set; }
         public ImageSource PageImage { get; set; }
+        public int Rotation { get; set; } = 0;
     }
 }

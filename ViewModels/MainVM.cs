@@ -1,4 +1,5 @@
 ﻿using GongSolutions.Wpf.DragDrop;
+using PdfSharp;
 using PdfSharp.Pdf;
 using System;
 using System.Collections;
@@ -41,6 +42,7 @@ namespace PDFPages.ViewModels
         public double PreviewHeight { get; set; } = 800;
         public ImageSource PreviewImage { get; set; }
         public bool PreviewOpen { get; set; } = false;
+        public int PreviewRotation { get; set; } = 0;
 
         #endregion
 
@@ -99,6 +101,14 @@ namespace PDFPages.ViewModels
             get
             {
                 return _DeleteItemsCommand ?? (_DeleteItemsCommand = new CommandHandler(e => { DeleteItems(e); }, true));
+            }
+        }
+        private ICommand _RotateCommand;
+        public ICommand RotateCommand
+        {
+            get
+            {
+                return _RotateCommand ?? (_RotateCommand = new CommandHandler(e => { Rotate(e as PageInfo); }, true));
             }
         }
 
@@ -164,6 +174,17 @@ namespace PDFPages.ViewModels
             }
             if (Files.Count == 1) SplitPages();
             if (Files.Count > 1) MergePages();
+        }
+
+        private void Rotate(PageInfo page)
+        {
+            if (page != null)
+            {
+                page.Page.Orientation = page.Page.Orientation == PageOrientation.Landscape ? PageOrientation.Portrait : PageOrientation.Landscape;
+                page.Page.Rotate = page.Page.Rotate >= 270 ? 0 : page.Page.Rotate + 90;
+                page.Rotation = page.Page.Rotate;
+            }
+            var i = page?.PageImage;
         }
 
         public void SortFiles()
@@ -250,8 +271,10 @@ namespace PDFPages.ViewModels
         {
             if (page != null)
             {
-                PreviewHeight = page.Page.Height.Point;
-                PreviewWidth = page.Page.Width.Point;
+                PreviewRotation = page.Rotation;
+                var sideways = PreviewRotation == 90 || PreviewRotation == 270;
+                PreviewHeight = sideways ? page.Page.Width.Point : page.Page.Height.Point;
+                PreviewWidth = sideways ? page.Page.Height.Point : page.Page.Width.Point;
                 PreviewImage = page.PageImage;
                 PreviewOpen = true;
             }

@@ -9,11 +9,16 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+		<GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
 		<CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="Resources\rotate-image-icon-11.jpg" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Fody" Version="6.5.2">
@@ -28,6 +33,12 @@
 		<PackageReference Include="PdfiumViewer.Native.x86_64.v8-xfa" Version="2018.4.8.256" />
 		<PackageReference Include="PdfSharp" Version="1.50.5147" />
 		<PackageReference Include="PropertyChanged.Fody" Version="3.4.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="Resources\rotate-image-icon-11.jpg">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Resource>
 	</ItemGroup>
 
 	<ItemGroup>

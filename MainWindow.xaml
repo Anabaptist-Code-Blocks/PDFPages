@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:local="clr-namespace:PDFPages"
-        xmlns:dd="urn:gong-wpf-dragdrop" xmlns:vm="clr-namespace:PDFPages.ViewModels" mc:Ignorable="d"
-        Title="PDF Pages" Height="850" Width="800">
+        xmlns:dd="urn:gong-wpf-dragdrop" xmlns:vm="clr-namespace:PDFPages.ViewModels" mc:Ignorable="d" Title="PDF Pages"
+        Height="850" Width="800">
     <Window.DataContext>
         <vm:MainVM />
     </Window.DataContext>
@@ -143,13 +143,46 @@
                     <DataGridTemplateColumn Header="Pages" Width="*">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Image Source="{Binding PageImage}">
-                                    <Image.InputBindings>
+                                <Grid>
+                                    <Grid.InputBindings>
                                         <MouseBinding Gesture="RightClick"
-                                                Command="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor},  Path=DataContext.PreviewCommand}"
+                                                Command="{Binding RelativeSource={RelativeSource AncestorType=DataGrid, Mode=FindAncestor},  Path=DataContext.PreviewCommand}"
                                                 CommandParameter="{Binding}" />
-                                    </Image.InputBindings>
-                                </Image>
+                                    </Grid.InputBindings>
+                                    <Image Source="{Binding PageImage}">
+                                        <Image.LayoutTransform>
+                                            <TransformGroup>
+                                                <ScaleTransform />
+                                                <SkewTransform />
+                                                <RotateTransform Angle="{Binding Rotation}" />
+                                                <TranslateTransform />
+                                            </TransformGroup>
+                                        </Image.LayoutTransform>
+                                    </Image>
+                                    <Button x:Name="RotateButton"
+                                            Command="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor},  Path=DataContext.RotateCommand}"
+                                            CommandParameter="{Binding}" HorizontalAlignment="Right"
+                                            VerticalAlignment="Top" Width="22" Height="22" >
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource ButtonBase}">
+                                                <Setter Property="Visibility"  Value="Hidden"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger
+                                                            Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell, Mode=FindAncestor}, Path=IsMouseOver}"
+                                                            Value="true">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <Button.Content>
+                                            <!--<TextBlock Text="{Binding Rotation}" />-->
+                                            <Image Source="pack://application:,,,/Resources/rotate-image-icon-11.jpg"
+                                                    Width="18" Height="18" HorizontalAlignment="Left"
+                                                    VerticalAlignment="Top" />
+                                        </Button.Content>
+                                    </Button>
+                                </Grid>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -159,12 +192,23 @@
                     Height="21" Command="{Binding AddFileCommand}" ToolTip="Add Files" />
         </Grid>
         <Popup IsOpen="{Binding PreviewOpen}" StaysOpen="False" Placement="MousePoint" AllowsTransparency="True">
-            <Border x:Name="popupBorder" CornerRadius="10" BorderBrush="DimGray" BorderThickness="1"
-                    Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}">
-                <Border.Background>
-                    <ImageBrush Stretch="Fill" ImageSource="{Binding PreviewImage}" />
-                </Border.Background>
-            </Border>
+            <Grid>
+                <Border x:Name="popupBorder" CornerRadius="10" BorderBrush="DimGray" BorderThickness="1"
+                        Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}">
+                    <Border.LayoutTransform>
+                        <TransformGroup>
+                            <ScaleTransform />
+                            <SkewTransform />
+                            <RotateTransform Angle="{Binding PreviewRotation}" />
+                            <TranslateTransform />
+                        </TransformGroup>
+                    </Border.LayoutTransform>
+                    <Border.Background>
+                        <ImageBrush Stretch="Fill" ImageSource="{Binding PreviewImage}" />
+                    </Border.Background>
+                </Border>
+            </Grid>
         </Popup>
+
     </Grid>
 </Window>
