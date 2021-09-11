@@ -57,3 +57,4 @@ Root: "HKCR"; Subkey: "SystemFileAssociations\.pdf\shell\Split PDF\command"; Val
 
 [Icons]
 Name: "{usersendto}\Merge PDF Files"; Filename: "{app}\PDFPages.exe"; Parameters: "merge"
+Name: "{autoprograms}\Pdf Pages"; Filename: "{app}\PDFPages.exe"
