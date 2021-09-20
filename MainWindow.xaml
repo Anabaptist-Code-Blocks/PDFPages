@@ -2,25 +2,32 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:local="clr-namespace:PDFPages"
-        xmlns:dd="urn:gong-wpf-dragdrop" xmlns:vm="clr-namespace:PDFPages.ViewModels" mc:Ignorable="d" Title="PDF Pages"
-        Height="850" Width="800">
+        xmlns:ex="http://schemas.xceed.com/wpf/xaml/toolkit" xmlns:dd="urn:gong-wpf-dragdrop"
+        xmlns:vm="clr-namespace:PDFPages.ViewModels" mc:Ignorable="d" Title="PDF Pages" Height="850" Width="800">
     <Window.DataContext>
         <vm:MainVM />
     </Window.DataContext>
     <Grid>
         <Button Content="Single Output File" HorizontalAlignment="Left" Margin="7,6,0,0" VerticalAlignment="Top"
                 Width="131" Command="{Binding MergeCommand}" />
+        <TextBlock HorizontalAlignment="Left" Margin="10,32,0,0" Text="Split" TextWrapping="Wrap"
+                VerticalAlignment="Top" />
+        <ex:IntegerUpDown HorizontalAlignment="Left" Margin="38,32,0,0"
+                Value="{Binding SplitNPages, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="50" />
+        <TextBlock HorizontalAlignment="Left" Margin="90,32,0,0" Text="page(s) per file" TextWrapping="Wrap"
+                VerticalAlignment="Top" />
+
         <Button Content="One File Per Page" HorizontalAlignment="Left" Margin="7,33,0,0" VerticalAlignment="Top"
-                Width="132" Command="{Binding SplitCommand}" />
+                Width="132" Command="{Binding SplitCommand}" Visibility="Hidden" />
         <TextBlock HorizontalAlignment="Left" Margin="158,7,0,0" Text="Output Folder" TextWrapping="Wrap"
                 VerticalAlignment="Top" />
         <TextBox HorizontalAlignment="Stretch" Margin="237,7,30,0" Text="{Binding OutputPath}" TextWrapping="NoWrap"
                 VerticalAlignment="Top" />
         <Button Content="..." HorizontalAlignment="Right" Margin="0,7,10,0" VerticalAlignment="Top" Width="20"
                 Height="18" Command="{Binding SelectFolderCommand}" />
-        <Slider HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Margin="158,34,0,0"
+        <Slider HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Margin="178,34,0,0"
                 Value="{Binding RowHeight}" ToolTip="Thumbnail Size" Minimum="30" Maximum="500" />
-        <Button Content="Save Output Files" HorizontalAlignment="Left" Margin="270,33,0,0" VerticalAlignment="Top"
+        <Button Content="Save Output Files" HorizontalAlignment="Left" Margin="290,33,0,0" VerticalAlignment="Top"
                 Width="132" Command="{Binding SaveCommand}" />
         <Grid Margin="0,60,0,0">
             <Grid.ColumnDefinitions>
@@ -162,10 +169,10 @@
                                     <Button x:Name="RotateButton"
                                             Command="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor},  Path=DataContext.RotateCommand}"
                                             CommandParameter="{Binding}" HorizontalAlignment="Right"
-                                            VerticalAlignment="Top" Width="22" Height="22" >
+                                            VerticalAlignment="Top" Width="22" Height="22">
                                         <Button.Style>
                                             <Style TargetType="Button" BasedOn="{StaticResource ButtonBase}">
-                                                <Setter Property="Visibility"  Value="Hidden"/>
+                                                <Setter Property="Visibility" Value="Hidden" />
                                                 <Style.Triggers>
                                                     <DataTrigger
                                                             Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell, Mode=FindAncestor}, Path=IsMouseOver}"

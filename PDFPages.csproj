@@ -5,6 +5,8 @@
 		<TargetFramework>net5.0-windows</TargetFramework>
 		<UseWPF>true</UseWPF>
 		<ApplicationIcon>Resources\AppIcon.ico</ApplicationIcon>
+		<Version>1.0.1</Version>
+		<AssemblyVersion>1.0.1.0</AssemblyVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -21,6 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Extended.Wpf.Toolkit" Version="3.8.2" />
 		<PackageReference Include="Fody" Version="6.5.2">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

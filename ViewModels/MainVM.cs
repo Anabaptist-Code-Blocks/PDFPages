@@ -28,6 +28,7 @@ namespace PDFPages.ViewModels
         private bool outputFileSortDesc = false;
         DefaultDropHandler dropHandler = new DefaultDropHandler();
         DefaultDragHandler dragHandler = new DefaultDragHandler();
+        private int _SplitNPages = 1;
         #endregion
 
         #region Properties
@@ -43,6 +44,15 @@ namespace PDFPages.ViewModels
         public ImageSource PreviewImage { get; set; }
         public bool PreviewOpen { get; set; } = false;
         public int PreviewRotation { get; set; } = 0;
+        public int SplitNPages
+        {
+            get => _SplitNPages;
+            set
+            {
+                _SplitNPages = value;
+                SplitPages(_SplitNPages);
+            }
+        }
 
         #endregion
 
@@ -201,7 +211,7 @@ namespace PDFPages.ViewModels
             OutputFiles = new ObservableCollection<PDFFile>(list);
         }
 
-        private void SplitPages()
+        private void SplitPages(int n = 1)
         {
             try
             {
@@ -209,10 +219,20 @@ namespace PDFPages.ViewModels
                 foreach (var file in Files)
                 {
                     int cnt = 1;
+                    int cntN = 1;
                     foreach (var page in file.Pages)
                     {
-                        OutputFiles.Add(new PDFFile(file.FileName.Replace(".pdf", $" ({cnt}).pdf"), new List<PageInfo>() { page }));
-                        cnt++;
+                        if (cntN == 1)
+                        {
+                            OutputFiles.Add(new PDFFile(file.FileName.Replace(".pdf", $" ({cnt}).pdf"), new List<PageInfo>() { page }));
+                            cnt++;
+                        }
+                        else
+                        {
+                            OutputFiles.LastOrDefault().Pages.Add(page);
+                        }
+                        cntN++;
+                        if (cntN > n) cntN = 1;
                     }
                 }
             }
