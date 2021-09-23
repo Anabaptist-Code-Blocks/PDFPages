@@ -7,7 +7,6 @@ SignedUninstaller=yes
 AppName=PDF Pages
 AppVersion=1.0.2
 UninstallDisplayName=PDF Pages
-;UninstallDisplaySize=35168256
 UninstallDisplaySize=192364544
 DefaultDirName={commonpf}\PDF Pages
 OutputDir=..\Installer\Output
@@ -23,33 +22,7 @@ Compression=lzma
 AppId={{F44D8949-C82A-4E7B-B3EE-A1D7C078D979}
 
 [Files]
-; Source: "..\bin\Release\net5.0-windows\*"; DestDir: "{app}"
-; Source: "..\bin\Release\net5.0-windows\de\*"; DestDir: "{app}\de"
-; Source: "..\bin\Release\net5.0-windows\nl\*"; DestDir: "{app}\nl"
-; Source: "..\bin\Release\net5.0-windows\ref\*"; DestDir: "{app}\ref"
-; Source: "..\bin\Release\net5.0-windows\x64\*"; DestDir: "{app}\x64"
-; Source: "..\bin\Release\net5.0-windows\x86\*"; DestDir: "{app}\x86"
-
-; standalone with framework
-Source: "..\bin\Release\net5.0-windows\publish\*"; DestDir: "{app}"
-Source: "..\bin\Release\net5.0-windows\publish\de\*"; DestDir: "{app}\de"
-Source: "..\bin\Release\net5.0-windows\publish\nl\*"; DestDir: "{app}\nl"
-Source: "..\bin\Release\net5.0-windows\publish\x64\*"; DestDir: "{app}\x64"
-Source: "..\bin\Release\net5.0-windows\publish\x86\*"; DestDir: "{app}\x86"
-Source: "..\bin\Release\net5.0-windows\publish\cs\*"; DestDir: "{app}\cs"
-Source: "..\bin\Release\net5.0-windows\publish\es\*"; DestDir: "{app}\es"
-Source: "..\bin\Release\net5.0-windows\publish\fr\*"; DestDir: "{app}\fr"
-Source: "..\bin\Release\net5.0-windows\publish\it\*"; DestDir: "{app}\it"
-Source: "..\bin\Release\net5.0-windows\publish\ja\*"; DestDir: "{app}\ja"
-Source: "..\bin\Release\net5.0-windows\publish\ko\*"; DestDir: "{app}\ko"
-Source: "..\bin\Release\net5.0-windows\publish\pl\*"; DestDir: "{app}\pl"
-Source: "..\bin\Release\net5.0-windows\publish\pt-BR\*"; DestDir: "{app}\pt-BR"
-Source: "..\bin\Release\net5.0-windows\publish\ru\*"; DestDir: "{app}\ru"
-Source: "..\bin\Release\net5.0-windows\publish\tr\*"; DestDir: "{app}\tr"
-Source: "..\bin\Release\net5.0-windows\publish\zh-Hans\*"; DestDir: "{app}\zh-Hans"
-Source: "..\bin\Release\net5.0-windows\publish\zh-Hant\*"; DestDir: "{app}\zh-Hant"
-
-
+Source: "..\bin\Release\net5.0-windows\publish\*"; DestDir: "{app}"; Flags: recursesubdirs
 
 [Registry]
 Root: "HKCR"; Subkey: "SystemFileAssociations\.pdf\shell\Split PDF"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"; Flags: deletekey uninsdeletekey
