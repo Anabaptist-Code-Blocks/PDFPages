@@ -31,9 +31,8 @@
 		<PackageReference Include="gong-wpf-dragdrop" Version="2.4.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 		<PackageReference Include="Ookii.Dialogs.Wpf" Version="3.1.0" />
-		<PackageReference Include="PdfiumViewer" Version="2.13.0" />
-		<PackageReference Include="PdfiumViewer.Native.x86.v8-xfa" Version="2018.4.8.256" />
-		<PackageReference Include="PdfiumViewer.Native.x86_64.v8-xfa" Version="2018.4.8.256" />
+		<PackageReference Include="PDFium.Windows" Version="1.0.0" />
+		<PackageReference Include="PDFiumSharpV2" Version="1.0.1" />
 		<PackageReference Include="PdfSharp" Version="1.50.5147" />
 		<PackageReference Include="PropertyChanged.Fody" Version="3.4.0" />
 	</ItemGroup>

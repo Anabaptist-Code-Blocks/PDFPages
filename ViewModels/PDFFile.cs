@@ -48,8 +48,7 @@ namespace PDFPages.ViewModels
                 bytes = new byte[file.Length];
                 await file.ReadAsync(bytes, 0, (int)file.Length);
             }
-            var stream = new MemoryStream(bytes);
-            var pdfDocument = PdfiumViewer.PdfDocument.Load(stream);
+            var doc = new PDFiumSharp.PdfDocument(bytes);
             for (int i = 0; i < Pages.Count; i++)
             {
                 var page = Pages[i].Page;
@@ -57,10 +56,12 @@ namespace PDFPages.ViewModels
                 int yDpi = Convert.ToInt32(page.Height.Point / page.Height.Inch);
                 int width = Convert.ToInt32(page.Width.Point);
                 var xDpi = Convert.ToInt32(page.Width.Point / page.Width.Inch);
-                var image = pdfDocument.Render(i, (int)width, (int)height, xDpi, yDpi, PdfiumViewer.PdfRenderFlags.Annotations);
-                using (var ms = new MemoryStream())
+                var img = new PDFiumSharp.PDFiumBitmap(width, height, true);
+                img.Fill(new PDFiumSharp.Types.FPDF_COLOR(255, 255, 255));
+                doc.Pages[i].Render(img, PDFiumSharp.Enums.PageOrientations.Normal, PDFiumSharp.Enums.RenderingFlags.Annotations | PDFiumSharp.Enums.RenderingFlags.Printing);
+                using (MemoryStream ms = new MemoryStream())
                 {
-                    image.Save(ms, ImageFormat.Bmp);
+                    img.Save(ms, xDpi, yDpi);
                     ms.Seek(0, SeekOrigin.Begin);
                     App.Current.Dispatcher.Invoke(() =>
                     {
@@ -70,16 +71,20 @@ namespace PDFPages.ViewModels
                         bitmapImage.StreamSource = ms;
                         bitmapImage.EndInit();
                         Pages[i].PageImage = bitmapImage;
-                        //PageImages.Add(bitmapImage);
                     });
                 }
             }
+            doc.Close();
             Console.WriteLine("Got Images: " + FileName);
             return true;
         }
+
         private void GetImages(MemoryStream stream)
         {
-            var pdfDocument = PdfiumViewer.PdfDocument.Load(stream);
+            var bytes = new byte[stream.Length];
+            stream.Seek(0, SeekOrigin.Begin);
+            stream.Read(bytes, 0, (int)stream.Length);
+            var doc = new PDFiumSharp.PdfDocument(bytes);
             for (int i = 0; i < Pages.Count; i++)
             {
                 var page = Pages[i].Page;
@@ -87,10 +92,13 @@ namespace PDFPages.ViewModels
                 int yDpi = Convert.ToInt32(page.Height.Point / page.Height.Inch);
                 int width = Convert.ToInt32(page.Width.Point);
                 var xDpi = Convert.ToInt32(page.Width.Point / page.Width.Inch);
-                var image = pdfDocument.Render(i, (int)width, (int)height, xDpi, yDpi, PdfiumViewer.PdfRenderFlags.Annotations);
-                using (var ms = new MemoryStream())
+
+                var img = new PDFiumSharp.PDFiumBitmap(width, height, true);
+                img.Fill(new PDFiumSharp.Types.FPDF_COLOR(255, 255, 255));
+                doc.Pages[i].Render(img, PDFiumSharp.Enums.PageOrientations.Normal, PDFiumSharp.Enums.RenderingFlags.Annotations | PDFiumSharp.Enums.RenderingFlags.Printing);
+                using (MemoryStream ms = new MemoryStream())
                 {
-                    image.Save(ms, ImageFormat.Bmp);
+                    img.Save(ms, xDpi, yDpi);
                     ms.Seek(0, SeekOrigin.Begin);
                     App.Current.Dispatcher.Invoke(() =>
                     {
@@ -103,6 +111,7 @@ namespace PDFPages.ViewModels
                     });
                 }
             }
+            doc.Close();
             Console.WriteLine("Got Images: " + FileName);
             return;
         }
