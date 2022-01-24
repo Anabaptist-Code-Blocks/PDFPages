@@ -5,7 +5,7 @@
 SignTool=MsSign $f
 SignedUninstaller=yes
 AppName=PDF Pages
-AppVersion=1.0.2
+AppVersion=1.0.3
 UninstallDisplayName=PDF Pages
 UninstallDisplaySize=192364544
 DefaultDirName={commonpf}\PDF Pages
