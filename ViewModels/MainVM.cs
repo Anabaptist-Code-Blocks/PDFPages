@@ -136,13 +136,15 @@ namespace PDFPages.ViewModels
             {
                 foreach (var path in dialog.FileNames)
                 {
-                    try
+                    var pdf = new PDFFile(path);
+                    if (pdf.FileValid)
                     {
-                        Files.Add(new PDFFile(path));
+                        Files.Add(pdf);
                     }
-                    catch
+                    else
                     {
-                        //Don't stress about invalid files.
+                        //show an error to the user.
+                        ShowError(nameof(AddFileCommand), pdf.FileLoadError, 4000);
                     }
                 }
             }
@@ -377,10 +379,20 @@ namespace PDFPages.ViewModels
                         if (data != null && (data.GetDataPresent("FileContents") || data.GetDataPresent(DataFormats.FileDrop)))
                         {
                             var files = ExtractFiles(data);
+                            var errors = "";
                             for (int i = files.Count - 1; i >= 0; i--)
                             {
-                                Files.Insert(dropInfo.InsertIndex, files[i]);
+                                if (files[i].FileValid)
+                                {
+                                    Files.Insert(dropInfo.InsertIndex, files[i]);
+                                }
+                                else
+                                {
+                                    if (errors != "") errors += "\n";
+                                    errors += files[i].FileName + ":\n" + files[i].FileLoadError;
+                                }
                             }
+                            if (errors != "") ShowError(nameof(AddFileCommand), errors, 4000);
                             return;
                         }
                         break;

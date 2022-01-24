@@ -33,9 +33,24 @@ namespace PDFPages.ViewModels
             {
                 FullPath = path;
                 FileName = Path.GetFileName(path);
-                Document = PdfSharp.Pdf.IO.PdfReader.Open(path, PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
-
+                var version = PdfSharp.Pdf.IO.PdfReader.TestPdfFile(path);
+                if (version == 0)
+                {
+                    FileValid = false;
+                    FileLoadError = "The file is not a valid PDF.";
+                }
+                try
+                {
+                    Document = PdfSharp.Pdf.IO.PdfReader.Open(path, PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
+                }
+                catch (Exception e)
+                {
+                    FileValid = false;
+                    FileLoadError = "Error reading file: \n" + e.Message;
+                    return;
+                }
                 foreach (var page in Document.Pages) Pages.Add(new PageInfo(page));
+                FileValid = true;
                 Task.Delay(1).ContinueWith(_ => _ = GetImagesAsync());
             }
         }
@@ -120,6 +135,8 @@ namespace PDFPages.ViewModels
         public string FileName { get; set; }
         public ObservableCollection<PageInfo> Pages { get; set; } = new ObservableCollection<PageInfo>();
         public PdfDocument Document { get; set; }
+        public bool FileValid { get; set; } = false;
+        public string FileLoadError { get; set; } = "";
     }
 
     public class PageInfo : ViewModelBase
